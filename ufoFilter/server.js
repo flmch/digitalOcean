@@ -63,6 +63,16 @@ function handleRequest(request,response){
 			response.writeHead(200,{"content-type":"text/html"});
 			response.write(htmlFile);
 			response.end();				
+		}else if(requestURL === "/script.js"){
+			var scriptFile = fs.readFileSync("script.js","utf8");
+			response.writeHead(200,{"content-type":"text/javascript"});
+			response.write(scriptFile);
+			response.end();	
+		}else if(requestURL === "/style.css"){
+			var cssFile = fs.readFileSync("style.css","utf8");
+			response.writeHead(200,{"content-type":"text/css"});
+			response.write(cssFile);
+			response.end();	
 		}else{
 			var parsed = url.parse(requestURL);
 			var requestQuery = reformatQuery(decodeURI(parsed.query));
