@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <% include _head.ejs %>
+</head>
+<body>
+
+
+    <div class="container-fluid">
+		<div id="postModal" style="display:none">
+			<div id="deleteConfirm">
+				<p>Post will be deleted forever, are you sure?</p>	
+				<form style="display:inline-block" method="POST" action="/posts/<%= post.id %>?_method=DELETE">
+					<button name="yes" class="btn btn-danger">Delete</button>
+				</form>	
+				<button style="display:inline-block" name="no" class="btn btn-default">Cancel</button>
+			</div>
+		</div>
+        <div class="row">
+
+            <h2>
+            	<%= post.title %>
+            </h2>
+            <p>
+            	Posted by: <strong><%= post.author %></strong>
+            </p>         
+            <p>
+            	Tags: <% tags.forEach(function(tag){ %>
+            	 	<span class="btn btn-xs btn-default">
+            	 		<%= tag.name %>
+            	 	</span>
+            	<% }); %>
+            </p>
+            <p id="postContent">
+            	<%= post.content %>
+            </p>
+
+            <a href="/posts/<%= post.id %>/edit" class="btn btn-primary">Edit Post Content</a>
+            <a class="btn btn-default" id="updateVote"><span class="glyphicon glyphicon-thumbs-up"></span><span id="voteNum"><%= post.vote || 0 %></span></a>
+            <button class="btn btn-link"><a href="/">Back</a></button>
+            <button id="deletePostBtn" class="btn btn-danger">Delete Post</button>
+             
+
+            <hr>
+
+            <!-- comment -->
+			<% include _commentform.ejs %>           	
+            
+            <hr>
+            <h3>Comments:</h3>
+            
+            <div id="allcomments">
+	        	<% comments.forEach(function(comment){ %>
+	        	<div class="singleComment" commentId="<%= comment.id %>">
+	        		<!-- comment modal (display none by default)-->
+			        <div class="commentModal" style="display:none">
+						<div class="deleteCommentConfirm">
+							<p>Are you sure to DELETE comment?</p>	
+							<!-- <form style="display:inline-block" method="POST" action="/posts/<%= post.id %>/comments/<%= comment.id %>?_method=DELETE"> -->
+								<button name="yes" class="deleteYes btn btn-danger btn-sm">Delete</button>
+							<!-- </form>	 -->
+							<button style="display:inline-block" name="no" class="btn btn-default btn-sm">Cancel</button>
+						</div>
+					</div>
+					<!-- comment content -->
+	        		<p><%= comment.content %><p>
+	        		<h5>Posted by: <%= comment.author%></h5>
+	        		<a href="/posts/<%= post.id %>/comments/<%= comment.id %>/edit" class="btn btn-link">edit</a>
+	        		<button class="btn btn-link deleteCommentBtn">delete</button>
+	        	</div>
+	        	<% }); %>
+            </div>
+            
+        </div>
+    </div>
+
+     <% include _footer.ejs %>
+</body>
+</html>

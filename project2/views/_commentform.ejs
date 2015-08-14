@@ -1,0 +1,7 @@
+<form role="form" method="POST" action="<%= action %>">
+<h4><%= title %>:</h4>
+<textarea class="form-control" name="content" required><%= comment.content %></textarea>
+<h4>Your Name:</h4>
+<input class="form-control" name="author" type="text" value="<%= comment.author %>">
+	<button style="margin-top:15px" id="createComments" class="btn btn-primary"><%= title %></button>
+</form>	 

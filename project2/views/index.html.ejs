@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <% include _head.ejs %>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <header><h1>Forum</h1></header>
+        </div>      
+        <div class="row">
+            <div class="col-md-3">
+                
+                <aside>
+                  <hr>
+                    <div id="newPostBtn">
+                      <a href="/posts/new" class="btn btn-success btn-lg">Create New Post</a>
+                    </div>
+                  <hr>
+                  <div id="tagsDisplay">
+                    <h4>Tags:</h4>
+                    <% tags.forEach(function(tag){ %>
+                        <a tagid="<%= tag.id %>" style="margin: 3px 0px" class="tag btn btn-xs btn-info"><%= tag.name %></a>
+                    <% }); %>
+                  </div>
+                </aside>
+                
+            </div>           
+            <div style="border-left: 1px solid rgba(0,0,0,0.2)" class="col-md-9">
+                <div class="row">
+                  <div class="col-md-6">
+                    <input id="searchContent" type="text" class="form-control" placeholder="search title">
+                  </div>
+                  <div class="col-md-2">
+                      <button id="postSearch" class="btn btn-primary">Search</button>
+                  </div>
+
+                  <div class="col-md-4">
+                    <select id="postSort" class="form-control">
+                        <option>sort posts by</option>
+                        <option>comment number-asc</option>
+                        <option>comment number-desc</option>
+                        <option>popularity-asc</option>
+                        <option>popularity-desc</option>
+                    </select>
+                  </div>
+                </div>
+
+                <section>
+                    <% posts.forEach(function(post){ %>
+                      <div class="showPost">
+                        <p><span><a href="/posts/<%= post.id %>"><%= post.title %></a></span>
+                        <span style="margin-left:16px" class="dateDisplay"><%= post.postTime %></span>
+                        <span style="float:right"><span class="glyphicon glyphicon-comment"></span><%= post.commentsCount || 0 %></span>                      
+                        <span style="float:right"><span class="glyphicon glyphicon-thumbs-up"></span><%= post.vote || 0 %></span></p>
+                      </div>
+                    <% }); %>
+                </section>
+            </div>
+        </div>
+    </div> <!-- end of "container-fluid" -->
+
+     <% include _footer.ejs %>
+</body>
+</html>
