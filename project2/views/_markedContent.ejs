@@ -1,0 +1,24 @@
+<h1 id="karaoke-dokie">Karaoke-dokie</h1>
+<blockquote>
+<p><strong>The Story:</strong></p>
+<p>You&#39;ve been hired to build a karaoke system for <strong>Tempo Tantrum</strong>, Sung&#39;s lastest karaoke business venture! No off-the-shelf solution will do - Sung wants a custom system to get those words on the screen.</p>
+</blockquote>
+<h2 id="instructions">Instructions</h2>
+<p>Do your work in the linked <code>karaoke.js</code> file.</p>
+<ol>
+<li>Make an array out of the lines of your favorite song</li>
+<li>Write a function <code>repeatedBehavior</code> that logs a line of your song to the console</li>
+<li>Write a setInterval function that logs a new line every 2 seconds</li>
+<li>Refactor your code to display the new lines on the DOM using jQuery</li>
+</ol>
+<h3 id="setinterval-syntax">setInterval Syntax</h3>
+<pre><code class="lang-java">
+// function that will be repeated every interval
+var mySweetCallback = function mySweetCallback () {
+  console.log(&quot;Omg callback has been fired!&quot;);
+};
+// setInterval takes two arguments: a callback function and a time in millisecond
+// The callback can be NAMED or ANONYMOUS!
+// setInterval returns an id we can save to a variable and use to clear an interval later on.
+var intervalId = setInterval(mySweetCallback, 3000);
+</code></pre>

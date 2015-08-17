@@ -203,30 +203,30 @@ $(function(){
 	// 	});
 	// });
 
-    $("#loginForm").formValidation({
-    	framework: "bootstrap",
-    	icon: {
-            valid: 'glyphicon glyphicon-ok',
-            invalid: 'glyphicon glyphicon-remove',
-            validating: 'glyphicon glyphicon-refresh'    		
-    	},
-    	fields: {
-    		email: {
-    			validators: {
-    				notEmpty: {
-    					message: "Email is required."
-    				}
-    			}
-    		},
-    		password: {
-    			validators: {
-    				notEmpty: {
-    					message: "Password is required."
-    				}
-    			}
-    		}
-    	}
-    });
+    // $("#loginForm").formValidation({
+    // 	framework: "bootstrap",
+    // 	icon: {
+    //         valid: 'glyphicon glyphicon-ok',
+    //         invalid: 'glyphicon glyphicon-remove',
+    //         validating: 'glyphicon glyphicon-refresh'    		
+    // 	},
+    // 	fields: {
+    // 		email: {
+    // 			validators: {
+    // 				notEmpty: {
+    // 					message: "Email is required."
+    // 				}
+    // 			}
+    // 		},
+    // 		password: {
+    // 			validators: {
+    // 				notEmpty: {
+    // 					message: "Password is required."
+    // 				}
+    // 			}
+    // 		}
+    // 	}
+    // });
 
     $("#signupForm").formValidation({
     	framework: "bootstrap",
@@ -308,4 +308,5 @@ $(function(){
 			}
 		};		
 	}
+
 });

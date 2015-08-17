@@ -12,7 +12,21 @@ var dbConfig = require('./mongoDB.js');
 var mongoose = require('mongoose');
 var bodyParser = require("body-parser");
 var methodOverride = require("method-override");
+var fs = require("fs");
+var marked = require("marked");
 var getTimeDiff = require("./countTimeDiff.js")
+
+marked.setOptions({
+  renderer: new marked.Renderer(),
+  gfm: true,
+  tables: true,
+  breaks: false,
+  pedantic: false,
+  sanitize: true,
+  smartLists: true,
+  smartypants: false
+});
+
 
 //connect database for user info
 mongoose.connect(dbConfig.url);
@@ -126,7 +140,7 @@ app.get("/posts/sort/:column/:order/:search?",function(req,res){
 
 app.get("/posts/search/:content?",function(req,res){
 	var target = req.params.content;
-	db.all("SELECT * FROM posts",function(err,posts){
+	db.all("SELECT * FROM posts ORDER BY id DESC",function(err,posts){
 		if(err) console.log(err);
 		if(target){
 			posts = posts.filter(function(post,index){
@@ -211,6 +225,7 @@ app.post("/posts",function(req,res){
 app.get("/posts/:id",function(req,res){
 	var id = req.params.id;
     var user = req.user;
+    var isLoggedIn = req.isAuthenticated();
 
 	db.all("SELECT * FROM comments WHERE post_id=?",id,function(err,comments){
 		if(err) console.log(err);
@@ -218,13 +233,15 @@ app.get("/posts/:id",function(req,res){
 				"INNER JOIN tags ON taggings.tag_id=tags.id "+
 				"INNER JOIN posts ON taggings.post_id=posts.id "+
 				"WHERE posts.id=?",id,function(err,data){
+					fs.writeFileSync(__dirname+"/views/_markedContent.ejs",marked(data[0].content));
 					res.render("showpost.html.ejs",{post: data[0],
 						comments: comments,
 						tags: data,
 						comment: "",
 						action: "/posts/"+id+"/comments/new",
 						title: "Leave Comment",
-						user: user});					
+						user: user,
+						isLoggedIn:isLoggedIn});					
 				});
 	});
 })

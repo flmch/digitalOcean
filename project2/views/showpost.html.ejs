@@ -11,23 +11,39 @@
 			</div>
 		</div>
         <div class="row">
+            <div class="col-md-9">
+                <h2>
+                	<%= post.title %>
+                </h2>
+                <p>
+                	Posted by: <strong><%= post.author %></strong>
+                </p>         
+                <p>
+                	Tags: <% tags.forEach(function(tag){ %>
+                	 	<span class="btn btn-xs btn-default">
+                	 		<%= tag.name %>
+                	 	</span>
+                	<% }); %>
+                </p>
+            </div>
+            <div class="col-md-3">
+              <% if(isLoggedIn){ %>
+                <div class="row">
+                  <div class="col-md-8">
+                    <h5 style="float:right">Hi <%= user.firstname %>!</h5>
+                  </div>
+                  <div class="col-md-4">
+                    <a class="btn btn-warning" href="/signout">Logout</a>
+                  </div>
+                </div>
+              <% } %> 
+            </div>
+        </div>
+        <div class="row">
 
-            <h2>
-            	<%= post.title %>
-            </h2>
-            <p>
-            	Posted by: <strong><%= post.author %></strong>
-            </p>         
-            <p>
-            	Tags: <% tags.forEach(function(tag){ %>
-            	 	<span class="btn btn-xs btn-default">
-            	 		<%= tag.name %>
-            	 	</span>
-            	<% }); %>
-            </p>
-            <p id="postContent">
-            	<%= post.content %>
-            </p>
+            <div id="postContent">
+            	<% include _markedContent.ejs %>
+            </div>
 
             <% if(user){ %>
                 <% if( user.email === post.email ){ %>
