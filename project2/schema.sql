@@ -9,6 +9,7 @@ CREATE TABLE posts (
 	content text NOT NULL,
 	author text,
 	vote integer DEFAULT 0,
+	email text NOT NULL,
 	commentsCount integer DEFAULT 0,
 	create_date text
 );
@@ -38,3 +39,5 @@ CREATE TABLE taggings (
 );
 
 PRAGMA foreign_keys = ON;
+
+INSERT INTO tags (name) VALUES ("ALL");

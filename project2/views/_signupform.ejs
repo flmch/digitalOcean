@@ -1,0 +1,35 @@
+<form role="form" method="POST" action="" id="signupForm">
+    <div class="form-group">
+    	<h4>Email</h4>
+        <input type="text" class="form-control" name="email">
+    </div>
+
+    <div class="form-group">
+        <h4>First Name</h4>
+        <input type="text" class="form-control" name="firstname">
+    </div>
+
+    <div class="form-group">
+        <h4>Last Name</h4>
+        <input type="text" class="form-control" name="lastname">
+    </div>
+
+    <div class="form-group">
+    	<h4>Password</h4>
+        <input type="password" class="form-control" name="password">
+    </div>
+
+    <div class="form-group">
+        <h4>Re-Enter Password</h4>
+        <input type="password" class="form-control" name="confirmPassword">
+    </div>    
+
+    <% if(message){ %>
+        <h4 class="wrnMsg"><%= message %></h4>
+    <% } %>
+
+    <div class="form-group">
+        <br><button type="submit" class="btn btn-primary">Signup</button>
+        <button class="btn btn-link"><a href="/">Cancel</a></button>
+    </div>
+</form>

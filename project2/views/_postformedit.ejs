@@ -1,10 +1,21 @@
-<form role="form" method="POST" action="<%= action %>">
-	<h4>Title</h4>
-    <input type="text" class="form-control" name="title" value="<%= post.title %>" required>
-	<h4>Author</h4>
-    <input type="text" class="form-control" name="author" value="<%= post.author %>" > 
-    <h4>Content</h4>
-    <textarea class="form-control" rows="10" name="content" required><%= post.content %></textarea>
-    <br><button type="submit" class="btn btn-primary">Submit</button>
-    <button class="btn btn-link"><a href="/posts/<%= post.id %>">Cancel</a></button>
+<form role="form" method="POST" action="<%= action %>" id="postFormEdit">
+    <div class="form-group">
+    	<h4>Title</h4>
+        <input type="text" class="form-control" name="title" value="<%= post.title %>">
+    </div>
+
+    <div class="form-group">
+    	<h4>Author</h4>
+        <input type="text" class="form-control" name="author" value="<%= post.author %>" > 
+    </div>
+
+    <div class="form-group">
+        <h4>Content</h4>
+        <textarea class="form-control" rows="10" name="content" required><%= post.content %></textarea>
+    </div>
+
+    <div class="form-group">
+        <br><button type="submit" class="btn btn-primary">Submit</button>
+        <button class="btn btn-link"><a href="/">Cancel</a></button>
+    </div>
 </form>

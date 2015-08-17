@@ -7,21 +7,49 @@
 
     <div class="container-fluid">
         <div class="row">
-            <header><h1>Forum</h1></header>
+          <header>
+            <div class="col-md-9">
+                <h1>Forum</h1>
+            </div>
+            <div class="col-md-3">
+              <% if(isLoggedIn){ %>
+                <div class="row">
+                  <div class="col-md-8">
+                    <h5 style="float:right">Hi <%= user.firstname %>!</h5>
+                  </div>
+                  <div class="col-md-4">
+                    <a class="btn btn-warning" href="/signout">Logout</a>
+                  </div>
+                </div>
+              <% } %>  
+            </div> 
+          </header>           
         </div>      
         <div class="row">
             <div class="col-md-3">
                 
                 <aside>
                   <hr>
+
+                  <% if(isLoggedIn){ %>
+                    <!-- create new porst -->
                     <div id="newPostBtn">
                       <a href="/posts/new" class="btn btn-success btn-lg">Create New Post</a>
                     </div>
+                  
+                  <% }else{ %>
+                    <!-- login/signup -->
+                    <% include _loginform.ejs %>
+                    <a href="/signup" id="createAccount">Create Account</a>
+
+                  <% } %>
+
                   <hr>
+                  <!-- show tags -->
                   <div id="tagsDisplay">
                     <h4>Tags:</h4>
                     <% tags.forEach(function(tag){ %>
-                        <a tagid="<%= tag.id %>" style="margin: 3px 0px" class="tag btn btn-xs btn-info"><%= tag.name %></a>
+                        <a tagid="<%= tag.id %>" style="margin: 3px 0px" class="btn btn-xs btn-info"><%= tag.name %></a>
                     <% }); %>
                   </div>
                 </aside>

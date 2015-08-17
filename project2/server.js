@@ -4,41 +4,96 @@ var app = express();
 var sqlite3 = require("sqlite3");
 var db = new sqlite3.Database("data.db");
 var ejs = require("ejs");
-var fs = require("fs");
-var getTimeDiff = require("./countTimeDiff.js")
-
+var path = require("path");
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var dbConfig = require('./mongoDB.js');
+var mongoose = require('mongoose');
 var bodyParser = require("body-parser");
 var methodOverride = require("method-override");
+var getTimeDiff = require("./countTimeDiff.js")
 
+//connect database for user info
+mongoose.connect(dbConfig.url);
+
+// middleware
+app.use(logger('dev'));
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extend:false}));
 app.use(methodOverride("_method"));
+app.use(cookieParser());
 app.use(express.static(__dirname + '/public'));
 app.set("view_engine","ejs");
 
+
+var passport = require('passport');
+var expressSession = require('express-session');
+
+app.use(expressSession({secret: 'mySecretKey'}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Using the flash middleware provided by connect-flash to store messages in session
+ // and displaying in templates
+var flash = require('connect-flash');
+app.use(flash());
+
+// Initialize Passport
+var initPassport = require('./passport/init');
+initPassport(passport);
+
+// var isLoggedIn = function(req,res,next){
+// 	if(req.isAuthenticated()){
+// 		next();
+// 	}else{
+// 		res.redirect("/");
+// 	}
+// };
+
+// var isLoggedIn = function(req,res,next){
+// 	return req.isAuthenticated();
+// };
+
 app.get("/",function(req,res){
-	db.all("SELECT * FROM posts",function(err,posts){
+	var isLoggedIn = req.isAuthenticated();
+	// console.log(req.user);
+
+	db.all("SELECT * FROM posts ORDER BY id DESC",function(err,posts){
 		if(err) console.log(err);		
-		db.all("SELECT * FROM tags",function(err,tags){
-			if(err) console.log(err);
-			// var count = 0;
-			// posts.forEach(function(post){
-			// 	db.all("SELECT * FROM comments WHERE post_id=?",post.id,function(err,comments){
-			// 		if(err) console.log(err);
-			// 		count++;
-			// 		post.commentsCount = comments.length;
-			// 		if(count === posts.length){
-			// 			res.render("index.html.ejs",{posts: posts,tags:tags});
-			// 		}
-			// 	});
-			// });
-			
+		db.all("SELECT * FROM tags",function(err,tags){			
 			posts.forEach(function(post){
 				var curDate = new Date();
 				post.postTime = getTimeDiff(post.create_date,curDate);
 			});
-			res.render("index.html.ejs",{posts: posts,tags:tags});
+			res.render("index.html.ejs",{posts: posts,
+				tags:tags,
+				isLoggedIn: isLoggedIn,
+				user: req.user,
+				message: req.flash("message")});
 		});
 	})
+});
+
+app.post("/login",passport.authenticate("login",{
+	successRedirect: '/',
+	failureRedirect: '/',
+	failureFlash : true 
+}));
+
+app.get("/signup",function(req,res){
+	res.render("signup.html.ejs",{message: req.flash("message")});
+});
+
+app.post("/signup",passport.authenticate("signup",{
+	successRedirect: '/',
+	failureRedirect: '/signup',
+	failureFlash : true 	
+}))
+
+app.get("/signout",function(req,res){
+	req.logout();
+	res.redirect("/");
 });
 
 app.get("/posts/sort/:column/:order/:search?",function(req,res){
@@ -84,7 +139,13 @@ app.get("/posts/search/:content?",function(req,res){
 });
 
 app.get("/posts/new",function(req,res){
-	res.render("newpost.html.ejs",{post:"", action: "/posts", tags: "", title: "Create New Post"});
+	console.log(req.user)
+	var post = {
+		"title"   : "",
+		"author"  : req.user.firstname,
+		"content" : ""
+	};
+	res.render("newpost.html.ejs",{post: post, action: "/posts", tags: "", title: "Create New Post"});
 });
 
 app.post("/posts",function(req,res){
@@ -92,16 +153,22 @@ app.post("/posts",function(req,res){
 	var date = new Date();
 	input.author = input.author || "anonymous";
 		
-	db.run("INSERT INTO posts (title,content,author,create_date) VALUES (?,?,?,?)",
-	   input.title,input.content,input.author,date.toString(),function(err){
+	db.run("INSERT INTO posts (title,content,author,create_date,email) VALUES (?,?,?,?,?)",
+	   input.title,input.content,input.author,date.toString(),req.user.email,function(err){
 	   		if(err) console.log(err);
+	   		var curPostId = this.lastID;
 
-	   		// if tags are not available, save post directly,
+	   		//add tag "ALL" to the new post
+	   		db.run("INSERT INTO taggings (post_id,tag_id) VALUES (?,?)",curPostId,1,function(err){
+	   			if(err) console.log(err);
+	   		});
+
+	   		// if other tags are not available, done, go back to main page
 	   		if(input.tags === ""){
 	   			res.redirect("/");
 	   		// otherwise save tags and create tagging link
 	   		}else{
-	   			var curPostId = this.lastID;
+	   			
 				var tags = input.tags.trim().toUpperCase().split(",").map(function(ele){
 						return ele.trim();
 					});	   		
@@ -143,39 +210,22 @@ app.post("/posts",function(req,res){
 
 app.get("/posts/:id",function(req,res){
 	var id = req.params.id;
-	db.get("SELECT * FROM posts WHERE id=?",id,function(err,post){
+    var user = req.user;
+
+	db.all("SELECT * FROM comments WHERE post_id=?",id,function(err,comments){
 		if(err) console.log(err);
-		db.all("SELECT * FROM comments WHERE post_id=?",id,function(err,comments){
-			if(err) console.log(err);
-			db.all("SELECT * FROM taggings WHERE post_id=?",id,function(err,taggings){
-				if(err) console.log(err);
-				var postTags = [];
-				if(taggings.length === 0){
-								res.render("showpost.html.ejs",{post: post,
-									comments: comments,
-									tags: postTags,
-									comment: "",
-									action: "/posts/"+id+"/comments/new",
-									title: "Leave Comment"});
-				}else{
-					taggings.forEach(function(tagging,index){
-						if(err) console.log(err);
-						db.get("SELECT * FROM tags WHERE id=?",tagging.tag_id,function(err,t){
-							postTags.push(t);
-							//render after last tag read
-							if( index+1 == taggings.length){
-								res.render("showpost.html.ejs",{post: post,
-									comments: comments,
-									tags: postTags,
-									comment: "",
-									action: "/posts/"+id+"/comments/new",
-									title: "Leave Comment"});						
-							}						
-						});
-					});					
-				}
-			});
-		});
+		db.all( "SELECT * FROM taggings "+
+				"INNER JOIN tags ON taggings.tag_id=tags.id "+
+				"INNER JOIN posts ON taggings.post_id=posts.id "+
+				"WHERE posts.id=?",id,function(err,data){
+					res.render("showpost.html.ejs",{post: data[0],
+						comments: comments,
+						tags: data,
+						comment: "",
+						action: "/posts/"+id+"/comments/new",
+						title: "Leave Comment",
+						user: user});					
+				});
 	});
 })
 
@@ -204,11 +254,8 @@ app.get("/posts/:id/like",function(req,res){
 	db.get("SELECT vote FROM posts WHERE id=?",id,function(err,data){
 		vote = (+data.vote)+1;
 		db.run("UPDATE posts SET vote=? WHERE id=?",vote,id,function(err){
-			if(err){
-				console.log(err);
-			}else{
-				res.send(vote+"");
-			}
+			if(err) console.log(err);
+			res.send(vote+"");	
 		});
 	});
 });
@@ -234,7 +281,6 @@ app.post("/posts/:id/comments/new",function(req,res){
 		});
 	db.get("SELECT commentsCount FROM posts WHERE id=?",id,function(err,data){
 		if(err) console.log(err);
-		console.log(data.commentsCount);
 		data.commentsCount++;
 		db.run("UPDATE posts SET commentsCount=? WHERE id=?",
 			data.commentsCount,id,function(err){

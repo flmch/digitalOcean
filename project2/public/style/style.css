@@ -108,3 +108,7 @@
 	-webkit-transform: translatex(-50%);
 	transform: translatex(-50%);	
 }
+
+.wrnMsg {
+	color: red;
+}
