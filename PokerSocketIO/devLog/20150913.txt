@@ -1,0 +1,29 @@
+Work Done:
+
+1. Handle situation when all active players move all-in. 
+	Board Card should be dealt automatically
+
+2. Bugs for two player game. BB/SB position is not correct	
+
+3. Front end control panel logic. Slider should only show valid bet value.
+	Only buttons for possible actions are active.
+
+4. Pot calculaitona and logic double check.
+
+
+8. Bugs for pot calculation/ problem is stack at client side is not changed properly after bet
+	Merge with problem 3
+
+6. Add setTimeOut when card on board is showing
+	Add setTimeOut when game start
+
+9. When stack get below 1 BB, require rebuy
+
+Checklist:
+
+
+5. Overall format and css
+
+7. Make object in JS file private
+
+10. Show down function

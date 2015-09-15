@@ -1,0 +1,21 @@
+Work Done:
+
+1. Refactor prototype definition file.
+2. Basic logic work
+
+Checklist:
+
+1. Handle situation when all active players move all-in. 
+	Board Card should be dealt automatically
+
+2. Bugs for two player game. BB/SB position is not correct
+
+3. Front end control panel logic. Slider should only show valid bet value.
+	Only buttons for possible actions are active.
+
+4. Pot calculaitona and logic double check.
+
+5. Overall format and css
+
+6. Add setTimeOut when card on board is showing
+	Add setTimeOut when game start

@@ -1,0 +1,14 @@
+Work Done:
+
+Checklist:
+
+
+5. Overall format and css
+
+7. Make object in JS file private
+
+10. Show down function
+
+11. refactor script.js and server.js, make the code DRY
+
+12. handle player leaving in the middle of game
