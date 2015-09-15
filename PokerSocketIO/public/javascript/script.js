@@ -1,4 +1,4 @@
-"use strict";
+// "use strict";
 
 console.log("linked");
 
@@ -28,26 +28,28 @@ $(function(){
 					  "<div class=\"actionDisplay\"></div>");
 
 	// populate control panel 
-	$("#minusOne").on("click",function(){
+	$("#minusOne").on("click",function(event){
 		var newVal = Math.max(+$("#slider").val()-1,0);
 		$("#slider").val(newVal);
 		$("#sliderValue").text("$ "+newVal);
-		btnValidation(event);
+		btnValidation();
 	});
-	$("#plusOne").on("click",function(){
+	$("#plusOne").on("click",function(event){
 		var newVal = Math.min(+$("#slider").val()+1,$("#slider").attr("max"));
 		$("#slider").val(newVal);
 		$("#sliderValue").text("$ "+newVal);
-		btnValidation(event);
+		btnValidation();
 	});
 	$("#slider").on("change",function(event){
-		btnValidation(event);
+		btnValidation();
 	});
 
 
-	function btnValidation(event){
+	function btnValidation(){
 		var curVal = +$("#slider").val();
 		var minVal = +$("#slider").attr('min');
+		console.log(curVal);
+		console.log(minVal);
 		$("#sliderValue").text("$ "+curVal);
 		if( minVal == 0){
 			if( curVal>=2 ){
@@ -546,7 +548,7 @@ $(function(){
 			bet = "$ "+bet;
 		}else{
 			bet = "";
-		}	
+		};
 		$(".seat").eq(id).find(".betAmount").text(bet);
 	}
 
