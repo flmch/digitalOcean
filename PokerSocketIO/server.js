@@ -95,9 +95,10 @@ io.on("connection",function(socket){
 				player: socket.player
 			};	
 			myGame.sockets[id].player.status = -1;
-			socket.player.totalBet += socket.player.curBet;
-			socket.player.curBet = 0;
+			controlWinners([id,"LEFT",undefined]);
 			console.log("someone left in middle of game");
+		}else{
+			myGame.sockets[id] = undefined;
 		}
 		console.log("disconnected");
 		delete socket;
@@ -147,6 +148,10 @@ io.on("connection",function(socket){
 			}
 		}
 
+		controlWinners(response);
+	});
+
+	function controlWinners(response){
 		console.log("check all fold or allin " + myGame.ifAllPlayersAllinOrFold());
 
 		if(myGame.ifAllPlayersAllinOrFold()){
@@ -156,7 +161,7 @@ io.on("connection",function(socket){
 				myGame.stage++;
 			}	
 			myGame.stage--;		
-		}
+		};
 
 		var winners = myGame.checkWinners();
 		if(winners){
@@ -180,13 +185,6 @@ io.on("connection",function(socket){
 
 			//split money 
 			myGame.splitPot(winners);
-			io.emit("win",[winners,myGame.sockets.map(function(socket){
-				if(socket){
-					return [socket.player.seatId,socket.player.stack,socket.player.username];
-				}else{
-					return undefined;
-				}
-			})]);
 
 			// find out who's stack is lower than one big blind,
 			// force the player to rebuy.
@@ -208,6 +206,14 @@ io.on("connection",function(socket){
 					}
 				}
 			});
+
+			io.emit("win",[winners,myGame.sockets.map(function(socket){
+				if(socket){
+					return [socket.player.seatId,socket.player.stack,socket.player.username];
+				}else{
+					return undefined;
+				}
+			})]);			
 
 			if( myGame.countReady() >= 2 ){
 				setTimeout(function(){
@@ -235,8 +241,8 @@ io.on("connection",function(socket){
 				myGame.curHighBet,
 				myGame.cardsOnBoard,
 				myGame.firstMove()]);
+				myGame.curPlayer = myGame.firstMove();
 		}else{
-
 			io.emit("action_required",[response[0],
 				socket.player.stack,
 				response[1],
@@ -244,9 +250,10 @@ io.on("connection",function(socket){
 				myGame.pot,
 				myGame.curHighBet,
 				undefined,
-				myGame.getNextPlayer(response[0])]);			
+				myGame.getNextPlayer(response[0])]);	
+				myGame.curPlayer = myGame.getNextPlayer(response[0]);
 		}
-	});
+	}
 
 	socket.on('rebuy',function(amount){
 		socket.player.stack += amount;
@@ -275,6 +282,7 @@ io.on("connection",function(socket){
 			myGame.initialBet(sb,bb,sbBet,bbBet);
 			io.emit("action_required",["*"+sb,myGame.sockets[sb].player.stack,"BET",sbBet,1,1,undefined,undefined]);
 			io.emit("action_required",["*"+bb,myGame.sockets[bb].player.stack,"BET",bbBet,3,2,undefined,myGame.firstMove()]);
+			myGame.curPlayer = myGame.firstMove();
 		// });
 	}
 

@@ -91,7 +91,7 @@ $(function(){
 						textStatus = "Empty Spot";
 					}else{
 						if(player.status === 1){
-							textStatus = "seated"; 
+							textStatus = "Away"; 
 						}else if(player.status === 2){
 							textStatus = "Ready"; 
 						} 
@@ -111,13 +111,16 @@ $(function(){
 				displayStack(id,newPlayerInfo.stack);
 				if( id !== playerInfo.seatId ){
 					disableClick(id);
-					displayStatus(id,"seated");
+					displayStatus(id,"Away");
 				}
 			});
 
 			//opposite to player_seatDown
 			socket.on("player_standUp",function(seatId){
 				cleanupPlayerDisplay(seatId);
+				$(".seat").eq(seatId).on("click",function(event){
+					playerSeatDown(event);
+				});					
 			});
 
 			socket.on('player_left',function(seatId){
@@ -125,13 +128,10 @@ $(function(){
 			});
 
 			function cleanupPlayerDisplay(seatId){
-				var $targetDiv = $(".seat").eq(seatId);
 				displayName(seatId,"");
 				displayStack(seatId,"");
 				displayStatus(seatId,"Empty Spot");
-				$targetDiv.on("click",function(event){
-					playerSeatDown(event);
-				});	
+				$(".seat").eq(seatId).removeClass("activePlayer");
 			}
 
 			// a player on the table's ready
@@ -142,7 +142,7 @@ $(function(){
 			socket.on("player_break",function(request){
 				var $targetDiv = $(".seat").eq(request);
 				if( request !== playerInfo.seatId ){
-					displayStatus(request,'seated');				
+					displayStatus(request,'Away');				
 				}else {
 					displayStatus(request,'');
 					displayAction(request,'');
@@ -248,20 +248,26 @@ $(function(){
 
 			// when there is winners, this msg will be sent out from server
 			socket.on("win",function(request){
+
+				// clean up pot diaplay
 				$("#potDisplay").empty();
+
+				// buttons resetting
 				$(".ctrlBtn").prop('disabled',true);
 				$("#rebuyBtn").prop('disabled',false);
-				var winnersName = "";
+				
+				// update player stack and show on board
 				request[1].forEach(function(player,index){
 					if( player ){
 						if( playerInfo.seatId === index ){
 							playerInfo.stack = +player[1];
 						}
-						$('.seat').eq(index).find('.stackDisplay').text(player[1]);
-						
+						displayStack(index,player[1]);
 					}
 				});
 
+				// get winners name and display
+				var winnersName = "";
 				if( typeof request[0] === 'object'){
 					request[0].forEach(function(winner){
 						winnersName += request[1][winner[0]][2]+" ";
@@ -279,8 +285,6 @@ $(function(){
 			});			
 		}
 
-
-		
 	});
 
 	// player join the game after click on one of the seat
@@ -454,12 +458,16 @@ $(function(){
 	}
 
 	function updateDisplay(id,stack,action,amount,pot){
-		$("[seat="+id+"]").removeClass("activePlayer");
-		displayStack(id,stack);
-		displayAction(id,action);
 		$("#potDisplay").text("Pot: $"+pot);
-		if( action === "BET" || action === "CALL" || action === "RAISE" ){
-			displayBet(id,amount);
+		// no need to update display when player left,
+		// because the display has been cleaned up already
+		if( action !== "LEFT"){
+			if( action === "BET" || action === "CALL" || action === "RAISE"){
+				displayBet(id,amount);
+			}
+			displayStack(id,stack);
+			displayAction(id,action);
+			$("[seat="+id+"]").removeClass("activePlayer");			
 		}
 	}
 

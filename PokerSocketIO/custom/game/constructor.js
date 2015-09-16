@@ -34,6 +34,7 @@ function Game (){
 	this.cardsOnBoard = [];
 	this.countAction;
 	this.ifGameOn = false;
+	this.curPlayer = 0;
 }
 
 module.exports = Game;
