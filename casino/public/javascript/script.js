@@ -13,7 +13,8 @@ $(function(){
 		"stack" : 0,	// not include curBet
 		"status" : 0,
 		"curBet" : 0,	// money on table for this round
-		"curMax" : 0   // highest bet for current round(pre-flop, river)
+		"curMax" : 0,   // highest bet for current round(pre-flop, river)
+		"inGame" : false //is the player is playing
 	};
 
 	var suits = ["C","S","H","D"];
@@ -172,21 +173,24 @@ $(function(){
 					socket.on("player_break",function(request){
 						var $targetDiv = $(".seat").eq(request);
 						displayAction(request,'');
-						displayBet(request,'');						
+						displayBet(request,'');	
+						console.log('someone bust: '+request);
+						$('#breakBtn').prop('disabled',true);
+						$('#standupBtn').prop('disabled',false);
+						$('#rebuyBtn').prop('disabled',false);											
 						if( request !== playerInfo.seatId ){
 							displayStatus(request,'Away');				
 						}else {
+							playerInfo.inGame = false;
 							displayStatus(request,'');
 							displayAction(request,'');
 							displayBet(request,'');
-							$('#breakBtn').prop('disabled',true);
-							$('#standupBtn').prop('disabled',false);
-							$('#rebuyBtn').prop('disabled',false);
 							$targetDiv.find(".cardDisplay").append("<button id=\"readyBtn\" class=\"btn btn-sm btn-success\">Ready</button>");	
 							$("#readyBtn").on("click",function(event){
 								if( playerInfo.stack < 2 ){
 									alert('You need to rebuy to keep playing.');
 								}else{
+									playerInfo.inGame = true;
 									socket.emit("i_ready",playerInfo.seatId);
 									$('.gameBtn').prop('disabled',true);
 									$('#breakBtn').prop('disabled',false);
@@ -249,21 +253,29 @@ $(function(){
 					// and client(palyer) who should take action now is required to 
 					// send back msg  
 					socket.on("action_required",function(request){
-
-						// adjust ss/bb bet
-						if( request[0][0] === "*" ){
-							request[0] = +request[0].slice(1);
-							if( playerInfo.seatId === request[0]){
-								playerInfo.curBet = request[3];
-								playerInfo.stack -= playerInfo.curBet;
+						if( playerInfo.inGame ){
+							// adjust ss/bb bet
+							if( request[0][0] === "*" ){
+								request[0] = +request[0].slice(1);
+								if( playerInfo.seatId === request[0]){
+									playerInfo.curBet = request[3];
+									playerInfo.stack -= playerInfo.curBet;
+								}
 							}
+
+							
+
+							// current highest bet (request[5]) is updated everytime a msg received
+							playerInfo.curMax = request[5];				
+
+							// if action if required from a player, active his control panal
+							if(request[7]){
+								// let next player to action
+								activePlayer(request[7]);
+							}				
 						}
 
 						updateDisplay(request[0],request[1],request[2],request[3],request[4]);
-
-						// current highest bet (request[5]) is updated everytime a msg received
-						playerInfo.curMax = request[5];				
-
 						// if there are new cards on board. show them
 						if(request[6]){
 							// show cards, let next player to action in callback function
@@ -273,14 +285,7 @@ $(function(){
 							playerInfo.curMax = 0;
 							$(".betAmount").text("");
 							$(".actionDisplay").text("");
-						};
-
-						// if action if required from a player, active his control panal
-						if(request[7]){
-							// let next player to action
-							activePlayer(request[7]);
-						}				
-						
+						};						
 					});
 
 					// when there is winners, this msg will be sent out from server
@@ -332,6 +337,7 @@ $(function(){
 
 	$("#breakBtn").on("click",function(event){	
 		// deactivePanal();
+		playerInfo.inGame = false;
 		$('.gameBtn').prop('disabled',false);
 		$('#breakBtn').prop('disabled',true);
 		$('#returnLobby').prop('disabled',true);
@@ -383,6 +389,7 @@ $(function(){
 
 	$("#foldBtn").on("click",function(event){
 		deactivePanal();
+		playerInfo.inGame = false;	
 		$('#break').prop('disabled',false);
 		socket.emit("action_taken",[playerInfo.seatId,"FOLD",undefined]);
 	});
@@ -470,6 +477,7 @@ $(function(){
 			if( playerInfo.stack < 2 ){
 				alert('You need to rebuy to keep playing.');
 			}else{
+				playerInfo.inGame = true;
 				$('.gameBtn').prop('disabled',true);
 				$('#breakBtn').prop('disabled',false);
 				socket.emit("i_ready",playerInfo.seatId);

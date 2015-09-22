@@ -12,7 +12,7 @@ body {
     -ms-user-select: none;
     user-select: none;
     /*background-image: url("/images/lightblue.png");*/
-    padding-top: 70px;
+    padding-top: 50px;
 }
 
 
@@ -322,4 +322,26 @@ box-shadow: 0px 0px 30px 0px rgba(255,234,0,1);*/
 
 #minusOne, #plusOne, #sliderValue {
 	font-size: 2vw;
+}
+
+#welcomeContainer {
+	position: relative;
+	height: auto;
+}
+
+#indexBG {
+	position: absolute;
+	width: 100%;
+}
+
+#welcomeContainer a {
+	position: absolute;
+	left: 50%;
+	top: 300px;
+    -moz-transform: translatex(-50%);
+	-webkit-transform: translatex(-50%);
+	transform: translatex(-50%);
+	color: white;
+	border: 2px solid white;
+	background-color: rgba(0,0,0,0.3);
 }
