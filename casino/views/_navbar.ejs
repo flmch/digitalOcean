@@ -1,0 +1,32 @@
+<nav class="navbar navbar-default navbar-fixed-top navbar-style">
+	<div class="container-fluid">	
+	    <div class="navbar-header">
+
+	      	<a class="navbar-brand" href="/">Casino</a>
+	    
+	    </div>
+	    <div class="pull-right">
+	      
+	    	<% if(isLoggedIn){ %>
+	    		<span class="navbar-brand" style="padding-right:40px">Welcome <%= user.firstname %></span>
+	    		<span class="navbar-brand" style="padding-right:40px"> Account Balance: $<%= user.stack %></span>
+
+	    		<span class="navbar-brand" style="padding-right:40px">
+	    			<a id="reloadAcct" >Buyin</a>
+	    		</span>
+
+	    		<a class="navbar-brand" href="/signout">
+		    		<span class=" glyphicon glyphicon-log-out" style="margin-right:10px" ></span>Log Out
+	    		</a>
+
+
+	    	<% }else{ %>
+	    		<a class="navbar-brand" href="/login">
+
+	    			<span class="glyphicon glyphicon-log-in" style="margin-right:10px" ></span>Log In
+	    		</a>
+	    	<% } %>
+	    </div>
+	    
+	</div>
+</nav>	
