@@ -222,6 +222,19 @@ var addPrototype = function(Game){
 
 	Game.prototype.getWinners = function(){
 		var self = this;
+
+		//for testing
+		var players = self.sockets.map(function(socket){
+			if(socket){
+				return socket.player;
+			}else{
+				return undefined;
+			}
+		});
+		console.log("before getWinners spliting");
+		console.log("pot: "+self.pot);
+		console.log(players);
+
 		var candidates = self.sockets.filter(function(socket){
 			return socket && (socket.player.status === 2 || socket.player.status === 4);
 		});
@@ -233,8 +246,9 @@ var addPrototype = function(Game){
 			return b.player.totalBet - a.player.totalBet;
 		});
 
+		
 		if( candidates[0].player.totalBet > candidates[1].player.totalBet ){
-
+			self.pot = self.pot - (candidates[0].player.totalBet-candidates[1].player.totalBet);
 			candidates[0].player.stack += candidates[0].player.totalBet-candidates[1].player.totalBet;
 			candidates[0].player.totalBet = candidates[1].player.totalBet;
 		}
@@ -278,6 +292,19 @@ var addPrototype = function(Game){
 		winners.sort(function(a,b){
 			return self.sockets[a[0]].player.totalBet-self.sockets[b[0]].player.totalBet;
 		});
+
+		//for testing
+		var players = self.sockets.map(function(socket){
+			if(socket){
+				return socket.player;
+			}else{
+				return undefined;
+			}
+		});
+		console.log("after getWinners spliting");
+		console.log("pot: "+self.pot);
+		console.log(players);
+
 
 		return winners;
 	}

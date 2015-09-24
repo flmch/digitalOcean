@@ -4,6 +4,11 @@ console.log("linked");
 
 $(function(){
 
+	// $(window).on('beforeunload',function(){
+	// 	console.log('sdfsd');
+	
+	// });
+
 	var socket;
 	var countDown;
 	var playerInfo = {    // used to send 
@@ -67,18 +72,41 @@ $(function(){
 	}
 
 	// when username and inital buyin is inputed, fire the event
+	// after join Game, sockets event's are defined
 	$("#joinGame").on("click",function(event){
 		// buyin information
 		playerInfo.stack = +$("input[name=buyin]").val();
 
 
 		if( !playerInfo.stack ){
-			alert('you must input username and buyin');
+			alert('you must input buyin');
 		}else{
 			// console.log(User);
 			// var record = User.find({},function(err,users){
 			// 	console.log(users);
 			// });
+
+		    $(window).on('unload',function(){
+		    	// console.log(playerInfo.stack);
+		    	var stk = -playerInfo.stack;
+				// updateDBStack(playerInfo.DBId,stk,function(){	
+				// 	// socket.emit("deleteSocket");	
+				// 	// socket = undefined;	
+				// 	// socket.disconnect();			
+				// });
+				$.ajax({
+					type: "PUT",
+					url: "/user/"+playerInfo.DBId,
+					data: "stack="+stk,
+					async: false,
+					success: function(data){
+						// if(func){
+						// 	func();
+						// }
+						// console.log('success');
+					}
+				});
+		    });	
 
 			$.ajax({
 				method: "GET",
@@ -87,7 +115,7 @@ $(function(){
 					var userinfo = JSON.parse(data)[0];
 
 					updateDBStack(userinfo._id,playerInfo.stack,function(){
-						console.log("socket");
+						console.log("update stack");
 					});
 					
 					playerInfo.DBId = userinfo._id;
@@ -99,7 +127,7 @@ $(function(){
 					$("#rebuyBtn").prop('disabled',false);
 					$("#returnLobby").prop('disabled',false);
 
-					// player join the game after click on one of the seat
+					// join game by clicking on one of the seat
 					$(".seat").on("click",function(event){
 						playerSeatDown(event);
 					});
@@ -143,7 +171,7 @@ $(function(){
 
 					//opposite to player_seatDown
 					socket.on("player_standUp",function(seatId){
-						console.log(seatId + " stand up")
+						// console.log(seatId + " stand up")
 						cleanupPlayerDisplay(seatId);
 						$(".seat").eq(seatId).on("click",function(event){
 							playerSeatDown(event);
@@ -155,6 +183,7 @@ $(function(){
 					});
 
 					function cleanupPlayerDisplay(seatId){
+						displayBet(seatId,"");
 						displayName(seatId,"");
 						displayStack(seatId,"");
 						displayStatus(seatId,"Empty Spot");
@@ -174,25 +203,30 @@ $(function(){
 						var $targetDiv = $(".seat").eq(request);
 						displayAction(request,'');
 						displayBet(request,'');	
-						console.log('someone bust: '+request);
-						$('#breakBtn').prop('disabled',true);
-						$('#standupBtn').prop('disabled',false);
-						$('#rebuyBtn').prop('disabled',false);											
+										
 						if( request !== playerInfo.seatId ){
 							displayStatus(request,'Away');				
 						}else {
-							playerInfo.inGame = false;
+							$("#winnerDisplay").show();	
+							$("#winnerDisplay").text("Click Ready to Play");
+							playerInfo.status = 3;
+							// playerInfo.inGame = false;
 							displayStatus(request,'');
 							displayAction(request,'');
 							displayBet(request,'');
+							$('#breakBtn').prop('disabled',true);
+							$('#standupBtn').prop('disabled',false);
+							$('#rebuyBtn').prop('disabled',false);	
 							$targetDiv.find(".cardDisplay").append("<button id=\"readyBtn\" class=\"btn btn-sm btn-success\">Ready</button>");	
 							$("#readyBtn").on("click",function(event){
 								if( playerInfo.stack < 2 ){
 									alert('You need to rebuy to keep playing.');
 								}else{
-									playerInfo.inGame = true;
+									playerInfo.status = 2;
+									// playerInfo.inGame = true;
+									$("#winnerDisplay").text("Waiting for More Players/Next Round");
 									socket.emit("i_ready",playerInfo.seatId);
-									$('.gameBtn').prop('disabled',true);
+									deactivePanal();
 									$('#breakBtn').prop('disabled',false);
 								}
 							});	
@@ -202,6 +236,7 @@ $(function(){
 					// count down control
 					socket.on('show_time_left',function(request){
 						$("#timeLeft").text(request);
+						$("#winnerDisplay").hide();	
 						$("#countDownDisplay").show();		
 					});
 
@@ -215,6 +250,7 @@ $(function(){
 					// when dealer button position is updated, 
 					// display the new position
 					socket.on("dealer_Btn",function(position){
+						playerInfo.status = 2;
 						$(".betAmount").text("");
 						$('.gameBtn').prop('disabled',true);
 						$("#boardCard").empty();
@@ -252,52 +288,63 @@ $(function(){
 					// the request contained info about detailed action of last move
 					// and client(palyer) who should take action now is required to 
 					// send back msg  
-					socket.on("action_required",function(request){
-						if( playerInfo.inGame ){
-							// adjust ss/bb bet
-							if( request[0][0] === "*" ){
-								request[0] = +request[0].slice(1);
-								if( playerInfo.seatId === request[0]){
-									playerInfo.curBet = request[3];
-									playerInfo.stack -= playerInfo.curBet;
-								}
+
+					socket.on("update_action",function(request){
+						// adjust ss/bb bet
+						if( request[0][0] === "*" ){
+							request[0] = +request[0].slice(1);
+							if( playerInfo.seatId === request[0]){
+								playerInfo.curBet = request[3];
+								playerInfo.stack -= playerInfo.curBet;
 							}
-
-							
-
-							// current highest bet (request[5]) is updated everytime a msg received
-							playerInfo.curMax = request[5];				
-
-							// if action if required from a player, active his control panal
-							if(request[7]){
-								// let next player to action
-								activePlayer(request[7]);
-							}				
-						}
-
+						}	
+						
 						updateDisplay(request[0],request[1],request[2],request[3],request[4]);
-						// if there are new cards on board. show them
-						if(request[6]){
-							// show cards, let next player to action in callback function
-							displayBoard(request[6]);
 
-							playerInfo.curBet = 0;
-							playerInfo.curMax = 0;
-							$(".betAmount").text("");
-							$(".actionDisplay").text("");
-						};						
+						if( playerInfo.status === 2 || playerInfo.status === 4 ){
+							
+							// current highest bet (request[5]) is updated everytime a msg received
+							playerInfo.curMax = request[5];											
+						}											
+					});
+
+					socket.on('send_boardcards',function(request){
+						// console.log("cards: "+request[6]);
+						// show cards, let next player to action in callback function
+						displayBoard(request);
+
+						playerInfo.curBet = 0;
+						playerInfo.curMax = 0;
+						$(".betAmount").text("");
+						$(".actionDisplay").text("");
+					});
+
+					socket.on("action_required",function(request){
+						// console.log("request: "+request);
+
+						if( playerInfo.status === 2 || playerInfo.status === 4 ){
+								// let next player to action
+								activePlayer(request);
+										
+						}						
 					});
 
 					// when there is winners, this msg will be sent out from server
 					socket.on("win",function(request){
-
+						// console.log("winner update: ");
+						// console.log(request);
 						// clean up pot diaplay
 						$("#potDisplay").empty();
 
 						// buttons resetting
-						$(".ctrlBtn").prop('disabled',true);
-						$("#breakBtn").prop('disabled',false);
+						if( playerInfo.status === 2 ){
+							$(".ctrlBtn").prop('disabled',true);
+							$("#breakBtn").prop('disabled',false);							
+						}
 						
+						// reset status
+						playerInfo.status = 2;
+
 						// update player stack and show on board
 						request[1].forEach(function(player,index){
 							if( player ){
@@ -309,16 +356,20 @@ $(function(){
 						});
 
 						// get winners name and display
+						// console.log(request[0]);
 						var winnersName = "";
-						if( typeof request[0] === 'object'){
+						if( request[0].length>1 ){
 							request[0].forEach(function(winner){
 								winnersName += request[1][winner[0]][2]+" ";
 							});
 						}else{
-							winnersName += request[1][request[0]][2];
+							winnersName += request[1][request[0][0][0]][2];
 						}
 						$("#winnerDisplay").text("Winner: "+winnersName);
-						$("#winnerDisplay").show();
+						
+						// setTimeout(function(){
+							$("#winnerDisplay").fadeIn();
+						// },2000);						
 						setTimeout(function(){
 							$("#winnerDisplay").fadeOut();
 						},4000);
@@ -334,14 +385,17 @@ $(function(){
 	});
 
 
-
+	// event listener for buttons
 	$("#breakBtn").on("click",function(event){	
 		// deactivePanal();
-		playerInfo.inGame = false;
+		playerInfo.status = 3;
+		// playerInfo.inGame = false;
 		$('.gameBtn').prop('disabled',false);
 		$('#breakBtn').prop('disabled',true);
 		$('#returnLobby').prop('disabled',true);
 		// socket.emit("action_taken",[playerInfo.seatId,"FOLD",undefined]);
+		$("#winnerDisplay").text("Click Ready to Play");
+		$("#winnerDisplay").show();	
 		socket.emit("i_break",playerInfo.seatId);
 	});
 
@@ -372,6 +426,7 @@ $(function(){
 				});
 			}
 		}		
+		$("#winnerDisplay").text("Click Empty Spot to Join");
 		socket.emit("i_standUp",playerInfo.seatId);	
 		playerInfo.seatId = undefined;
 		playerInfo.status = 0;
@@ -381,27 +436,37 @@ $(function(){
 		socket.disconnect();
 	});
 
-	// game action evetn listener
+	// game action event listener
 	$("#checkBtn").on("click",function(event){
 		deactivePanal();
 		socket.emit("action_taken",[playerInfo.seatId,"CHECK",undefined]);
 	});
 
 	$("#foldBtn").on("click",function(event){
-		deactivePanal();
-		playerInfo.inGame = false;	
-		$('#break').prop('disabled',false);
+		// deactive all the control buttons
+		// and active break btn
+		$(".ctrlBtn").prop('disabled',true);
+		$("#breakBtn").prop('disabled',false);
+
+		// change status
+		playerInfo.status = 3;
+		// playerInfo.inGame = false;	
 		socket.emit("action_taken",[playerInfo.seatId,"FOLD",undefined]);
 	});
 
 	$("#callBtn").on("click",function(event){
+		// console.log('call: ');
+		// console.log(playerInfo);
+		playerInfo.stack = playerInfo.stack - (playerInfo.curMax - playerInfo.curBet);	
 		playerInfo.curBet = playerInfo.curMax;
-		playerInfo.stack -= playerInfo.curBet;	
 		deactivePanal();
+		// console.log(playerInfo);
 		socket.emit("action_taken",[playerInfo.seatId,"CALL",playerInfo.curBet]);
 	});	
 
 	$("#betBtn").on("click",function(event){
+		// console.log('bet: ');
+		// console.log(playerInfo);
 		playerInfo.curBet = +$("#slider").val();
 		playerInfo.stack -= playerInfo.curBet;	
 		deactivePanal();
@@ -409,49 +474,71 @@ $(function(){
 		if( playerInfo.stack === 0){
 			action = "ALLIN";
 		}
+		// console.log(playerInfo);
 		socket.emit("action_taken",[playerInfo.seatId,action,playerInfo.curBet]);
 	});	
 
 	$("#raiseBtn").on("click",function(event){
+		// console.log('raise: ');
+		// console.log(playerInfo);	
+		playerInfo.stack = playerInfo.stack - ( (+$("#slider").val()) - playerInfo.curBet);
 		playerInfo.curBet = +$("#slider").val();
-		playerInfo.stack -= playerInfo.curBet;
 		deactivePanal();
 		var action = "RAISE";
 		if( playerInfo.stack === 0){
 			action = "ALLIN";
 		}
+		// console.log(playerInfo);
 		socket.emit("action_taken",[playerInfo.seatId,action,playerInfo.curBet]);
 	});
 
 	$("#allinBtn").on("click",function(event){
+		// console.log('allin');
+		// console.log(playerInfo);
 		deactivePanal();
+		$("#breakBtn").prop('disabled',false);
 		playerInfo.curBet += playerInfo.stack;
 		playerInfo.stack = 0;	
-		displayBet(playerInfo.seatId,playerInfo.curBet);
+		playerInfo.status = 4;
+		// console.log(playerInfo);
 		socket.emit("action_taken",[playerInfo.seatId,"ALLIN",playerInfo.curBet]);
 	});
 
-	$("#returnLobby").on("click",function(event){	
-		updateDBStack(playerInfo.DBId,-playerInfo.stack,function(){	
-			socket.emit("deleteSocket");	
-			socket = undefined;				
-			window.location.href="/";
-		});
-	});
+	// $("#returnLobby").on("click",function(event){	
+	// 	console.log('return lobyy runn');
+	// 	updateDBStack(playerInfo.DBId,-playerInfo.stack,function(){	
+	// 		// socket.emit("deleteSocket");	
+	// 		// socket = undefined;	
+	// 		socket = undefined;
+	// 		console.log(socket);		
+	// 		window.location.href="/";
+	// 	});
+	// });
+
+//     $(window).on('unload',function(){
+// 		updateDBStack(playerInfo.DBId,-playerInfo.stack,function(){	
+// 			socket.emit("deleteSocket");	
+// 			socket = undefined;				
+// 		});
+//     });	
+// console.log(window.location.href);
+
 
 	$("#cancelRebuy").on("click",function(event){
 		$("#rebuyModal").hide();
+		$("[name=rebuyAmount]").val("");
 	});
 
 	function updateDBStack(id,stack,func){
-		console.log(id);
-		console.log(typeof id);
-		console.log(stack);
-		console.log(typeof stack);		
+		// console.log(id);
+		// console.log(typeof id);
+		// console.log(stack);
+		// console.log(typeof stack);		
 		$.ajax({
 			type: "PUT",
 			url: "/user/"+id,
 			data: "stack="+stack,
+			// async: false,
 			success: function(data){
 				if(func){
 					func();
@@ -470,6 +557,7 @@ $(function(){
 		playerInfo.seatId = id;
 		playerInfo.status = 1;	
 
+		$("#winnerDisplay").text("Click Ready to Play");
 		// $targetDiv.addClass("seatedPlayer");
 		$targetDiv.find(".cardDisplay").text("");
 		$targetDiv.find(".cardDisplay").append("<button id=\"readyBtn\" class=\"btn btn-success\">Ready</button>");			
@@ -477,7 +565,9 @@ $(function(){
 			if( playerInfo.stack < 2 ){
 				alert('You need to rebuy to keep playing.');
 			}else{
-				playerInfo.inGame = true;
+				$("#winnerDisplay").text("Waiting for More Players/Next Round");
+				playerInfo.status = 2;
+				// playerInfo.inGame = true;
 				$('.gameBtn').prop('disabled',true);
 				$('#breakBtn').prop('disabled',false);
 				socket.emit("i_ready",playerInfo.seatId);
@@ -550,24 +640,29 @@ $(function(){
 		// do not allow player to leave if he is not current player
 		$('.gameBtn').prop('disabled',true);
 
+		$("#slider").val(0);
+		$("#sliderValue").text("$ 0");
 	}
 
 	function updateDisplay(id,stack,action,amount,pot){
 		$("#potDisplay").text("Pot: $"+pot);
 		// no need to update display when player left,
 		// because the display has been cleaned up already
-		if( action !== "LEFT"){
-			if( action === "BET" || action === "CALL" || action === "RAISE"){
-				displayBet(id,amount);
-			}
-			displayStack(id,stack);
-			displayAction(id,action);
-			$("[seat="+id+"]").removeClass("activePlayer");			
+
+		if( action === "BET" || action === "CALL" || action === "RAISE" || action === "ALLIN"){
+			// console.log("display bet: "+amount);
+			displayBet(id,amount);
 		}
+		displayStack(id,stack);
+		displayAction(id,action);
+		$("[seat="+id+"]").removeClass("activePlayer");			
+
 	}
 
 	function activePlayer(id){
 		//add class to active player
+		// console.log('id to display: '+id);
+		// console.log(typeof id);
 		$("[seat="+id+"]").addClass("activePlayer");
 		//active panel
 		if( id === playerInfo.seatId ){

@@ -14,12 +14,28 @@ var addPrototype = function(Game){
 	// splitted without anything left. Otherwise if loser's bet is greater than current winner's bet,
 	// splitted only that part of loser's bet, then go to next winner with higher bet.
 	Game.prototype.splitPot = function(winners){
-		console.log("winners: "+winners);
+		console.log("winners: ");
+		console.log(winners);
+		console.log(typeof winners);
 		var self = this;
+
+		//for testing
+		var players = self.sockets.map(function(socket){
+			if(socket){
+				return socket.player;
+			}else{
+				return undefined;
+			}
+		});
+		console.log("before spliting");
+		console.log("pot: "+self.pot);
+		console.log(players);
+
+		
 
 		// if one player wins without stand to the end of the game, he takes po
 		// otherwise all cards on board are shown, winners is in array format
-		if( typeof winners === "object"){
+		if( winners.length>1 ){
 			
 			var winnersCount = winners.length;
 
@@ -82,8 +98,15 @@ var addPrototype = function(Game){
 		// if only one player wins	
 		}else{
 			console.log("current pot: "+self.pot);
-			self.sockets[winners].player.stack += self.pot;
+			console.log(winners);
+			console.log(typeof winners);
+			console.log(winners[0]);
+			self.sockets[winners[0][0]].player.stack += self.pot;
 		}
+
+		console.log("after spliting");
+		console.log("pot: "+self.pot);
+		console.log(players);
 
 		// clean up after split
 		self.sockets.forEach(function(socket){

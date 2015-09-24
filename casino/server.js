@@ -57,7 +57,6 @@ var Card = require("./custom/card/main.js");
 var myGame = new Game();
 myGame.initiateCard();
 myGame.shuffle();
-
 // router
 
 app.get("/",function(req,res){
@@ -118,10 +117,15 @@ app.get("/getuserinfo",function(req,res){
 
 app.put("/user/:id",function(req,res){
 	var id = req.params.id;
-	var buyin = +req.body.stack;
+	var buyin = req.body.stack;
+	console.log("received request");
+	console.log(id);
+	console.log(buyin);
 	User.findOne({_id:id},function(err,user){
+		console.log(user.stack);
 		user.stack = user.stack-buyin;
-
+		console.log('processing');
+		console.log(user.stack);
 		user.save(function(err){
 			if(err) {
 				console.log("Save error.");
@@ -196,6 +200,13 @@ io.on("connection",function(socket){
 	});
 
 	socket.on("disconnect",function(){
+		// console.log(myGame.sockets);
+		if( socket && socket.player.seatId){
+			console.log(socket.player.seatId);
+		}
+		// console.log('this socket: ');
+		// console.log(socket);
+		// console.log(myGame.sockets);
 		// var id = socket.player.seatId;
 
 		// io.emit("player_left",id);
@@ -209,16 +220,46 @@ io.on("connection",function(socket){
 		// }else{
 		// 	myGame.sockets[id] = undefined;
 		// }
+
+		if( socket && socket.player.seatId ){
+			
+			if(myGame.ifGameOn){
+				if(myGame.curPlayer === socket.player.seatId ){
+					io.emit("update_action",[socket.player.seatId,
+							0,
+							"FOLD",
+							undefined,
+							myGame.pot,
+							myGame.curHighBet
+						]);
+				}
+				//create pseudo socket for pot calculation
+				myGame.sockets[socket.player.seatId] = {
+					player: socket.player
+				}
+				myGame.sockets[socket.player.seatId].player.status = -1;
+			}else{
+				myGame.sockets[socket.player.seatId] = undefined;
+			}
+			io.emit("player_standUp",socket.player.seatId);
+		}
+		
+		// console.log(socket);
+		socket = undefined;
+		console.log('socket now should be undefined: '+socket);
 		console.log("disconnected");
-		delete socket;
 	});
 
-	socket.on('deleteSocket',function(){
-		var id = socket.player.seatId;
-		myGame.sockets[id] = undefined;
-		delete socket;
-		socket.disconnect();
-	});
+	// socket.on('deleteSocket',function(){
+
+	// 	console.log('deleteSocket');
+	// 	console.log(myGame.sockets);
+	// 	console.log(socket);
+	// 	var id = socket.player.seatId;
+	// 	console.log('id: '+id);
+	// 	delete socket;
+	// 	socket.disconnect();
+	// });
 
 	// when a player send an action, do following
 	socket.on("action_taken",function(response){
@@ -237,12 +278,14 @@ io.on("connection",function(socket){
 				socket.player.curBet = myGame.curHighBet;
 				socket.player.stack -= extra;
 				myGame.pot += extra;
+				console.log("pot: "+myGame.pot);
 			}else if(response[1] === "BET"){
 				console.log(response[0]+" bet "+response[2]);
 				myGame.curHighBet = response[2];
 				socket.player.stack -= response[2];
 				socket.player.curBet = response[2];
 				myGame.pot += response[2];
+				console.log("pot: "+myGame.pot);
 			}else if(response[1] === "RAISE"){
 				console.log(response[0]+" raised to "+response[2]);
 				var extra = response[2] - socket.player.curBet;
@@ -250,8 +293,9 @@ io.on("connection",function(socket){
 				socket.player.curBet = response[2];
 				socket.player.stack -= extra;
 				myGame.pot += extra;
+				console.log("pot: "+myGame.pot);
 			}else if(response[1] === "ALLIN"){
-				console.log(response[0]+" allin");
+				console.log(response[0]+" allin "+response[2]);
 				socket.player.status = 4;
 				myGame.curHighBet = Math.max(myGame.curHighBet,response[2]);
 				var extra = response[2] - socket.player.curBet;
@@ -259,36 +303,57 @@ io.on("connection",function(socket){
 				socket.player.curBet = 0;
 				socket.player.stack = 0;
 				myGame.pot += extra;
+				console.log('extra: '+extra);
+				console.log("pot: "+myGame.pot);
+				console.log(socket.player);
 			}
 		}
+
+		io.emit("update_action",[response[0],
+				socket.player.stack,
+				response[1],
+				response[1] === "ALLIN"?response[2]:socket.player.curBet,
+				myGame.pot,
+				myGame.curHighBet
+			]);
 
 		controlWinners(response);
 	});
 
 	function controlWinners(response){
-		console.log("check all fold or allin " + myGame.ifAllPlayersAllinOrFold());
 
-		if( myGame.ifAllPlayersAllinOrFold() ){
-			myGame.stage++;
-			while(myGame.stage<4){
-				myGame.dealBoardCard();
-				myGame.stage++;
-			}	
-			myGame.stage--;		
-		};
+		// if( myGame.ifAllPlayersAllinOrFold() ){
+		// 	myGame.stage++;
+		// 	while(myGame.stage<4){
+		// 		myGame.dealBoardCard();
+		// 		myGame.stage++;
+		// 	}	
+		// 	myGame.stage--;		
+		// };
+
+		// if(myGame.ifAllPlayersAllinOrFold()){
+		// 	// update stage and deall all card on board if necessary
+		// 	myGame.stage++;
+		// 	while(myGame.stage<4){
+		// 		myGame.dealBoardCard();
+		// 		myGame.stage++;
+		// 	}	
+		// 	myGame.stage--;		
+
+		// 	io.emit("send_boardcards",myGame.cardsOnBoard);
+
+		// 	// move all curBet to totalBet
+		// 	myGame.sockets.forEach(function(socket){
+		// 		if(socket && socket.player.curBet >0){
+		// 			socket.player.totalBet += socket.player.curBet;
+		// 			socket.player.curBet = 0;
+		// 		}
+		// 	});
+		// };
 
 		var winners = myGame.checkWinners();
 		if(winners){
 			console.log("someone wins!");
-			// send last people's action
-			io.emit("action_required",[response[0],
-				socket.player.stack,
-				response[1],
-				socket.player.curBet,
-				myGame.pot,
-				myGame.curHighBet,
-				(typeof winners) === "object" ? myGame.cardsOnBoard:undefined,
-				undefined]);
 
 			myGame.sockets.forEach(function(socket){
 				if(socket){
@@ -335,43 +400,60 @@ io.on("connection",function(socket){
 				},5000);
 				// setTimeout(countDownThenStart(10),5000);
 			}
-		}else if(myGame.ifNextRound()){
+		}else if( myGame.ifNextRound() ){
 			console.log("next round");
+			console.log("check all fold or allin " + myGame.ifAllPlayersAllinOrFold());
 			myGame.sockets.forEach(function(socket){
 				if(socket){
 					socket.player.totalBet += socket.player.curBet;
 					socket.player.curBet = 0;
 				}
 			});
+			console.log('chekcpointeeee');
 			myGame.stage++;
 			myGame.curHighBet = 0;
 			myGame.countAction = 0;
 			myGame.dealBoardCard();
-			io.emit("action_required",[response[0],
-				socket.player.stack,
-				response[1],
-				socket.player.curBet,
-				myGame.pot,
-				myGame.curHighBet,
-				myGame.cardsOnBoard,
-				myGame.firstMove()]);
-				myGame.curPlayer = myGame.firstMove();
+			
+			// io.emit("action_required",[response[0],
+			// 	socket.player.stack,
+			// 	response[1],
+			// 	socket.player.curBet,
+			// 	myGame.pot,
+			// 	myGame.curHighBet,
+			// 	myGame.cardsOnBoard,
+			// 	myGame.firstMove()]);
+			
+			io.emit("send_boardcards",myGame.cardsOnBoard);
+
+			if(myGame.ifAllPlayersAllinOrFold()){
+				setTimeout(function(){
+					controlWinners(response);
+				},1000);
+			}else{
+				console.log("first: "+myGame.firstMove());
+				io.emit("action_required",myGame.firstMove());
+				myGame.curPlayer = myGame.firstMove();				
+			}
+
 		}else{
-			io.emit("action_required",[response[0],
-				socket.player.stack,
-				response[1],
-				socket.player.curBet,
-				myGame.pot,
-				myGame.curHighBet,
-				undefined,
-				myGame.getNextPlayer(response[0])]);	
-				myGame.curPlayer = myGame.getNextPlayer(response[0]);
+			// io.emit("action_required",[response[0],
+			// 	socket.player.stack,
+			// 	response[1],
+			// 	socket.player.curBet,
+			// 	myGame.pot,
+			// 	myGame.curHighBet,
+			// 	undefined,
+			// 	myGame.getNextPlayer(response[0])]);	
+
+			io.emit("action_required",myGame.getNextPlayer(response[0]));
+			myGame.curPlayer = myGame.getNextPlayer(response[0]);
 		}
 	}
 
 	socket.on('rebuy',function(amount){
 		socket.player.stack += amount;
-		io.emit('rebuy',[socket.player.seatId, amount]);
+		io.emit('rebuy',[socket.player.seatId, socket.player.stack]);
 	});
 
 	socket.on("chat message",function(data){
@@ -395,8 +477,13 @@ io.on("connection",function(socket){
 			var sbBet = myGame.countReady() === 2?2:1;
 			var bbBet = myGame.countReady() === 2?1:2;
 			myGame.initialBet(sb,bb,sbBet,bbBet);
-			io.emit("action_required",["*"+sb,myGame.sockets[sb].player.stack,"BET",sbBet,1,1,undefined,undefined]);
-			io.emit("action_required",["*"+bb,myGame.sockets[bb].player.stack,"BET",bbBet,3,2,undefined,myGame.firstMove()]);
+
+			io.emit("update_action",["*"+sb,myGame.sockets[sb].player.stack,"BET",sbBet,1,1]);
+			io.emit("update_action",["*"+bb,myGame.sockets[bb].player.stack,"BET",bbBet,3,2]);
+
+			io.emit("action_required",myGame.firstMove());
+			// io.emit("action_required",["*"+sb,myGame.sockets[sb].player.stack,"BET",sbBet,1,1,undefined,undefined]);
+			// io.emit("action_required",["*"+bb,myGame.sockets[bb].player.stack,"BET",bbBet,3,2,undefined,myGame.firstMove()]);
 			myGame.curPlayer = myGame.firstMove();
 		// });
 	}

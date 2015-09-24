@@ -53,7 +53,11 @@ var addPrototype = function(Game){
 			}
 			return this.countReady()===2?this.dealerPosition:utg;
 		}else{
-			return this.getNextPlayer(this.dealerPosition);
+			var first = this.getNextPlayer(this.dealerPosition);
+			while( !this.sockets[first] || this.sockets[first].player.status !== 2){
+				first = this.getNextPlayer(first);
+			}
+			return first;
 		}
 	}
 
@@ -105,7 +109,9 @@ var addPrototype = function(Game){
 
 	Game.prototype.ifNextRound = function(){
 		var self = this;
-		if( self.countAction < self.countReady() ){
+		if( self.ifAllPlayersAllinOrFold() ){
+			return true;
+		}else if( self.countAction < self.countReady() ){
 			return false;
 		}else{
 			var checker = true;
@@ -121,24 +127,25 @@ var addPrototype = function(Game){
 	}
 
 	Game.prototype.ifAllPlayersAllinOrFold = function(){
-		if( this.countReady() === 1 ){
+
+		var self = this;
+		if( self.countReady() === 1 ){
 			return false;
 		}else{
 			var checker = true;
-			var countActive = 0;
+			var counter = 0;
 			var self = this;			
-			this.sockets.forEach(function(socket){
-				if( socket ){
-					if(	socket.player.status === 2 ){
-						if(socket.player.curBet < self.curHighBet){
+			this.sockets.forEach(function(socket,index){
+				if( socket && socket.player.status === 2 ){
+					
+					if(socket.player.curBet < self.curHighBet){
+						checker = false;
+					}else{
+						counter++;
+						if( counter > 1){
 							checker = false;
-						}else{
-							countActive++;
-							if( countActive > 1){
-								checker = false;
-							}
 						}
-					}
+					}				
 				}
 			});
 			return checker;			
@@ -150,20 +157,20 @@ var addPrototype = function(Game){
 		// else return undefined
 		var self = this;
 		if(self.countReady() === 1){
+			console.log('only one player left');
 			var position;
 			self.sockets.forEach(function(socket,index){
 				if( socket && (socket.player.status === 2 || socket.player.status === 4 ) ){
 					position = index;
 				}
 			});
-			return position;
-		}else if( 
-			 self.stage === 3 && 
-				( self.ifNextRound() || self.ifAllPlayersAllinOrFold() ) 
-			){
+			return [[position]];
+		}else if( self.stage === 3 && self.ifNextRound() ){
+			console.log('Final Stage');
 			// compare card strength and get who wins
 			return self.getWinners();
 		}else{
+			console.log('No winners');
 			return undefined;
 		}
 	}

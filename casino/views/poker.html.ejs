@@ -41,7 +41,8 @@
 		    		<div id="countDownDisplay" style="display:none">
 		    			Game Will Start in <span id="timeLeft"></span> Seconds
 		    		</div>
-		    		<div id="winnerDisplay" style="display:none">
+		    		<div id="winnerDisplay">
+		    			Click on Empty Spot to Join
 		    		</div>
 		    		<div id="boardCard">
 	<!-- 	    		content for testing	
@@ -61,14 +62,14 @@
 	    		
 	    		<div class="actionBtns col-md-5 col-sm-5">
 				    <h5 style="color:white;margin-left:2%">Select Amount to Bet or Raise</h5><br>
-				    <div class="row" style="color:white">
-					    <div id="minusOne" class="col-md-1 col-sm-1">-</div>
+				    <div class="row">
+					    <button id="minusOne" class="col-md-1 col-sm-1 ctrlBtn">-</button>
 					    <div class="col-md-6 col-sm-6">
 					    	<input type="range" min="0" max="100" id="slider" value="0" class="form-control ctrlBtn">
 					    </div>
 					    
-					    <div id="plusOne" class="col-md-1 col-sm-1">+</div>
-					    <div id="sliderValue" class="col-md-4 col-sm-4">$ 0</div>
+					    <button id="plusOne" class="col-md-1 col-sm-1 ctrlBtn">+</button>
+					    <div style="color:white" id="sliderValue" class="col-md-4 col-sm-4">$ 0</div>
 				    </div><br>
 
 					<h5 style="color:white">Select Action</h5><br>
@@ -91,7 +92,7 @@
 		    		<button id="standupBtn" class="btn btn-default btn-block gameBtn">Stand Up</button><br>
 				    <!-- <button id="leaveBtn" class="btn btn-default">Leave Game</button> -->
 				    <button id="rebuyBtn" class="btn btn-default btn-block gameBtn">Rebuy</button><br>
-		    		<button id="returnLobby" class="btn btn-default btn-block gameBtn">Back to Lobby</button><br>				    
+		    		<button id="returnLobby" class="btn btn-default btn-block gameBtn"><a href="/">Back to Lobby</a></button><br>				    
 				</div>
 			    <br>
 			    <!-- <button id="pauseBtn">Take Break</button> -->
